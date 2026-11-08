@@ -200,7 +200,7 @@ function findNearestPrey(
       candidate.energy <= 0 ||
       candidate.species === organism.species ||
       (
-        organism.species === 'carnivore' &&
+        (organism.species === 'carnivore' || organism.species === 'predator') &&
         candidate.species === 'decomposer'
       )
     ) {
