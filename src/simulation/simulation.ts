@@ -34,7 +34,7 @@ const REPRODUCTION_RULES: Record<SpeciesType, number> = {
   omnivore: 120,
   carnivore: 200,
   predator: 200,
-  decomposer: 1,
+  decomposer: 0,
   decomposer_hunter: 130
 }
 
@@ -54,6 +54,8 @@ const INITIAL_SPECIES: SpeciesType[] = [
     'omnivore',
     'omnivore',
     
+    'predator',
+    'predator',
     'predator',
     
     'decomposer',
@@ -219,6 +221,14 @@ function findNearestPrey(
             candidate.id === organism.id ||
             candidate.energy <= 0 ||
             candidate.species === organism.species
+        ) {
+            continue
+        }
+        if (
+            (organism.species === 'omnivore' &&
+              candidate.species === 'carnivore') ||
+            (organism.species === 'carnivore' &&
+              candidate.species === 'omnivore')
         ) {
             continue
         }
