@@ -34,7 +34,8 @@ const REPRODUCTION_RULES: Record<SpeciesType, number> = {
   omnivore: 150,
   carnivore: 180,
   predator: 190,
-  decomposer: 150
+  decomposer: 150,
+  decomposer_hunter: 175
 }
 
 const INITIAL_SPECIES: SpeciesType[] = [
@@ -84,6 +85,7 @@ const INITIAL_SPECIES: SpeciesType[] = [
   'herbivore',
   'herbivore',
   'herbivore',
+  'herbivore',
   'carnivore',
   'carnivore',
   'omnivore',
@@ -96,7 +98,10 @@ const INITIAL_SPECIES: SpeciesType[] = [
   'decomposer',
   'decomposer',
   'decomposer',
-  'decomposer'
+  'decomposer',
+  'decomposer_hunter',
+  'decomposer_hunter',
+  'decomposer_hunter'
 ]
 
 function randomPosition(max: number): number {
@@ -231,11 +236,22 @@ function findNearestPrey(
     if (
       candidate.id === organism.id ||
       candidate.energy <= 0 ||
-      candidate.species === organism.species ||
-      (
-        (organism.species === 'carnivore' || organism.species === 'predator') &&
-        candidate.species === 'decomposer'
-      )
+      candidate.species === organism.species
+    ) {
+      continue
+    }
+
+    if (
+      organism.species === 'decomposer_hunter' &&
+      candidate.species !== 'decomposer'
+    ) {
+      continue
+    }
+
+    if (
+      (organism.species === 'carnivore' ||
+        organism.species === 'predator') &&
+      candidate.species === 'decomposer'
     ) {
       continue
     }
@@ -350,7 +366,9 @@ function updateOrganism(
   const nearest_waste = findNearestWaste(organism, food)
 
   const nearest_prey =
-    definition.diet === 'organisms' || definition.diet === 'both'
+    definition.diet === 'organisms' ||
+    definition.diet === 'both' ||
+    definition.diet === 'decomposers'
       ? findNearestPrey(organism, organisms)
       : null
 

@@ -7,11 +7,12 @@ export type SpeciesType =
   | 'omnivore'
   | 'predator'
   | 'decomposer'
+  | 'decomposer_hunter'
 
 export interface SpeciesDefinition {
   name: string
   color: string
-  diet: 'food' | 'organisms' | 'both' | 'dead'
+  diet: 'food' | 'organisms' | 'both' | 'dead' | 'decomposers'
   aggression: number
   genome: Genome
   initial_size: number
@@ -81,5 +82,18 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
       metabolism: 0.7
     },
     initial_size: 5.5
+  },
+
+  decomposer_hunter: {
+    name: 'Caçador de decompositores',
+    color: '#facc15',
+    diet: 'decomposers',
+    aggression: 0.85,
+    genome: {
+      speed: 65,
+      vision: 180,
+      metabolism: 1.25
+    },
+    initial_size: 6
   }
 }
