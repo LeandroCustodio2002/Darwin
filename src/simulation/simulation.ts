@@ -1,5 +1,5 @@
 
-import { createGenome } from './genetics/genome'
+import { createGenome, mutateGenome } from './genetics/genome'
 import type { Organism } from './entities/organism'
 import type { Food } from './entities/food'
 import { createWorld } from './world/world'
@@ -240,7 +240,7 @@ export function advanceWorld(
       energy: OFFSPRING_ENERGY,
       age: 0,
       generation: parent.generation + 1,
-      genome: { ...parent.genome }
+      genome: mutateGenome(parent.genome)
     }
 
     surviving_organisms[i] = {
