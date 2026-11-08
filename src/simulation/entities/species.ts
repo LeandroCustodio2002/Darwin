@@ -24,8 +24,8 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
     diet: 'food',
     aggression: 0,
     genome: {
-      speed: 45,
-      vision: 110,
+      speed: 100,
+      vision: 150,
       metabolism: 0.8
     },
     initial_size: 5
@@ -63,9 +63,9 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
     diet: 'organisms',
     aggression: 1,
     genome: {
-      speed: 50,
+      speed: 55,
       vision: 200,
-      metabolism: 1.5
+      metabolism: 1.3
     },
     initial_size: 7
   },
@@ -76,7 +76,7 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
     diet: 'dead',
     aggression: 0,
     genome: {
-      speed: 40,
+      speed: 300,
       vision: 160,
       metabolism: 0.7
     },
