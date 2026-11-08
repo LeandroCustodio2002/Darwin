@@ -9,18 +9,17 @@ export interface World {
   organisms: Organism[]
   food: Food[]
   next_entity_id: number
+  food_spawn_timer: number
 }
 
-export function createWorld(
-  width: number,
-  height: number
-): World {
+export function createWorld(width: number, height: number): World {
   return {
     width,
     height,
     tick: 0,
     organisms: [],
     food: [],
-    next_entity_id: 1
+    next_entity_id: 1,
+    food_spawn_timer: 0
   }
 }
