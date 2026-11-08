@@ -7,9 +7,16 @@ import type { World } from './world/world'
 
 const EATING_DISTANCE = 12
 const TURN_SPEED = 10
+
 const MAX_FOOD = 80
 const FOOD_SPAWN_INTERVAL = 2
 const FOOD_SPAWN_AMOUNT = 3
+
+const REPRODUCTION_THRESHOLD = 150
+const REPRODUCTION_COST = 75
+const OFFSPRING_ENERGY = 75
+const MAX_POPULATION = 50
+const REPRODUCTION_DISTANCE = 20
 
 function randomPosition(max: number): number {
   return Math.random() * max
@@ -28,30 +35,6 @@ function normalizeAngle(angle: number): number {
   while (angle > Math.PI) angle -= Math.PI * 2
   while (angle < -Math.PI) angle += Math.PI * 2
   return angle
-}
-
-function findNearestFood(
-  organism: Organism,
-  food: Food[]
-): Food | null {
-  let nearest_food: Food | null = null
-  let closest_distance = organism.genome.vision
-
-  for (const item of food) {
-    const distance = distanceBetween(
-      organism.x,
-      organism.y,
-      item.x,
-      item.y
-    )
-
-    if (distance < closest_distance) {
-      closest_distance = distance
-      nearest_food = item
-    }
-  }
-
-  return nearest_food
 }
 
 export function createInitialWorld(
@@ -87,6 +70,30 @@ export function createInitialWorld(
   }
 
   return world
+}
+
+function findNearestFood(
+  organism: Organism,
+  food: Food[]
+): Food | null {
+  let nearest_food: Food | null = null
+  let closest_distance = organism.genome.vision
+
+  for (const item of food) {
+    const distance = distanceBetween(
+      organism.x,
+      organism.y,
+      item.x,
+      item.y
+    )
+
+    if (distance < closest_distance) {
+      closest_distance = distance
+      nearest_food = item
+    }
+  }
+
+  return nearest_food
 }
 
 function updateOrganism(
@@ -167,71 +174,115 @@ function updateOrganism(
   }
 }
 
-
 export function advanceWorld(
-    world: World,
-    delta_time: number
-  ): World {
-    const remaining_food = [...world.food]
-    const surviving_organisms: Organism[] = []
-    let next_entity_id = world.next_entity_id
-  
-    for (const organism of world.organisms) {
-      const result = updateOrganism(
-        organism,
-        remaining_food,
-        delta_time,
-        world
+  world: World,
+  delta_time: number
+): World {
+  const remaining_food = [...world.food]
+  const surviving_organisms: Organism[] = []
+  let next_entity_id = world.next_entity_id
+
+  for (const organism of world.organisms) {
+    const result = updateOrganism(
+      organism,
+      remaining_food,
+      delta_time,
+      world
+    )
+
+    if (result.consumed_food_id !== null) {
+      const food_index = remaining_food.findIndex(
+        (item) => item.id === result.consumed_food_id
       )
-  
-      if (result.consumed_food_id !== null) {
-        const food_index = remaining_food.findIndex(
-          (item) => item.id === result.consumed_food_id
-        )
-  
-        if (food_index !== -1) {
-          remaining_food.splice(food_index, 1)
-        }
-      }
-  
-      if (result.organism.energy > 0) {
-        surviving_organisms.push(result.organism)
+
+      if (food_index !== -1) {
+        remaining_food.splice(food_index, 1)
       }
     }
-  
-    let food_spawn_timer = world.food_spawn_timer
-  
-    if (remaining_food.length < MAX_FOOD) {
-      food_spawn_timer += delta_time
-  
-      if (food_spawn_timer >= FOOD_SPAWN_INTERVAL) {
-        const amount = Math.min(
-          FOOD_SPAWN_AMOUNT,
-          MAX_FOOD - remaining_food.length
-        )
-  
-        for (let i = 0; i < amount; i++) {
-          remaining_food.push({
-            id: next_entity_id++,
-            x: randomPosition(world.width),
-            y: randomPosition(world.height),
-            energy: 25
-          })
-        }
-  
-        food_spawn_timer -= FOOD_SPAWN_INTERVAL
-      }
-    } else {
-      food_spawn_timer = 0
-    }
-  
-    return {
-      ...world,
-      organisms: surviving_organisms,
-      food: remaining_food,
-      next_entity_id,
-      food_spawn_timer,
-      tick: world.tick + 1
+
+    if (result.organism.energy > 0) {
+      surviving_organisms.push(result.organism)
     }
   }
-  
+
+  const initial_population = surviving_organisms.length
+
+  for (let i = 0; i < initial_population; i++) {
+    if (surviving_organisms.length >= MAX_POPULATION) {
+      break
+    }
+
+    const parent = surviving_organisms[i]
+
+    if (!parent || parent.energy < REPRODUCTION_THRESHOLD) {
+      continue
+    }
+
+    const offspring_angle = Math.random() * Math.PI * 2
+
+    const offspring: Organism = {
+      id: next_entity_id++,
+      x: Math.max(
+        0,
+        Math.min(
+          world.width,
+          parent.x + Math.cos(offspring_angle) * REPRODUCTION_DISTANCE
+        )
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          world.height,
+          parent.y + Math.sin(offspring_angle) * REPRODUCTION_DISTANCE
+        )
+      ),
+      angle: Math.random() * Math.PI * 2,
+      energy: OFFSPRING_ENERGY,
+      age: 0,
+      generation: parent.generation + 1,
+      genome: { ...parent.genome }
+    }
+
+    surviving_organisms[i] = {
+      ...parent,
+      energy: parent.energy - REPRODUCTION_COST
+    }
+
+    surviving_organisms.push(offspring)
+  }
+
+  let food_spawn_timer = world.food_spawn_timer
+
+  if (remaining_food.length < MAX_FOOD) {
+    food_spawn_timer += delta_time
+
+    if (food_spawn_timer >= FOOD_SPAWN_INTERVAL) {
+      const amount = Math.min(
+        FOOD_SPAWN_AMOUNT,
+        MAX_FOOD - remaining_food.length
+      )
+
+      for (let i = 0; i < amount; i++) {
+        remaining_food.push({
+          id: next_entity_id++,
+          x: randomPosition(world.width),
+          y: randomPosition(world.height),
+          energy: 25
+        })
+      }
+
+      food_spawn_timer -= FOOD_SPAWN_INTERVAL
+    }
+  } else {
+    food_spawn_timer = 0
+  }
+
+  return {
+    ...world,
+    organisms: surviving_organisms,
+    food: remaining_food,
+    next_entity_id,
+    food_spawn_timer,
+    tick: world.tick + 1
+  }
+}
