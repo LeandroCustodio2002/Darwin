@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { advanceWorld, createInitialWorld } from './simulation/simulation'
+import { calculateStatistics } from './simulation/statistics'
 import WorldCanvas from './components/WorldCanvas'
 
 function App() {
@@ -43,10 +44,7 @@ function App() {
     return () => cancelAnimationFrame(animation_frame)
   }, [])
 
-  const generation = Math.max(
-    0,
-    ...world.organisms.map((organism) => organism.generation)
-  )
+  const statistics = calculateStatistics(world)
 
   return (
     <main className="app">
@@ -101,7 +99,7 @@ function App() {
           <section className="panel">
             <span className="eyebrow">POPULAÇÃO</span>
             <div className="main-stat">
-              {world.organisms.length}
+              {statistics.population}
               <span>organismos vivos</span>
             </div>
           </section>
@@ -110,7 +108,7 @@ function App() {
             <span className="eyebrow">RECURSOS</span>
             <div className="stat-value">
               <span className="stat-dot food-dot" />
-              {world.food.length}
+              {statistics.food_count}
               <span>unidades de alimento</span>
             </div>
           </section>
@@ -118,8 +116,40 @@ function App() {
           <section className="panel">
             <span className="eyebrow">EVOLUÇÃO</span>
             <div className="stat-value">
-              {generation}
-              <span>gerações</span>
+              {statistics.max_generation}
+              <span>geração máxima</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <span className="eyebrow">VELOCIDADE MÉDIA</span>
+            <div className="stat-value">
+              {statistics.average_speed.toFixed(1)}
+              <span>unidades</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <span className="eyebrow">VISÃO MÉDIA</span>
+            <div className="stat-value">
+              {statistics.average_vision.toFixed(1)}
+              <span>unidades</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <span className="eyebrow">METABOLISMO MÉDIO</span>
+            <div className="stat-value">
+              {statistics.average_metabolism.toFixed(2)}
+              <span>unidades</span>
+            </div>
+          </section>
+
+          <section className="panel">
+            <span className="eyebrow">ENERGIA MÉDIA</span>
+            <div className="stat-value">
+              {statistics.average_energy.toFixed(1)}
+              <span>unidades</span>
             </div>
           </section>
 
