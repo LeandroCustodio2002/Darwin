@@ -64,11 +64,11 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
     diet: 'organisms',
     aggression: 1,
     genome: {
-      speed: 55,
-      vision: 200,
-      metabolism: 1.3
+      speed: 75,
+      vision: 250,
+      metabolism: 1.15
     },
-    initial_size: 7
+    initial_size: 8
   },
 
   decomposer: {

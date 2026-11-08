@@ -31,10 +31,10 @@ const WASTE_ENERGY = 20
 
 const REPRODUCTION_RULES: Record<SpeciesType, number> = {
   herbivore: 100,
-  omnivore: 170,
+  omnivore: 120,
   carnivore: 200,
   predator: 200,
-  decomposer: 30,
+  decomposer: 1,
   decomposer_hunter: 130
 }
 
@@ -199,54 +199,73 @@ function findNearestWaste(
 function findNearestPrey(
     organism: Organism,
     organisms: Organism[]
-  ): Organism | null {
+): Organism | null {
     if (organism.species === 'herbivore') {
-      return null
+        return null
     }
   
     let nearest_prey: Organism | null = null
     let closest_distance = organism.genome.vision
   
     for (const candidate of organisms) {
-      if (
-        candidate.id === organism.id ||
-        candidate.energy <= 0 ||
-        candidate.species === organism.species
-      ) {
-        continue
-      }
-  
-      if (
-        organism.species === 'decomposer_hunter' &&
-        candidate.species !== 'decomposer'
-      ) {
-        continue
-      }
-  
-      if (
-        (organism.species === 'carnivore' ||
-          organism.species === 'predator' ||
-          organism.species === 'omnivore') &&
-        candidate.species === 'decomposer'
-      ) {
-        continue
-      }
-  
-      const distance = distanceBetween(
-        organism.x,
-        organism.y,
-        candidate.x,
-        candidate.y
-      )
-  
-      if (distance < closest_distance) {
-        closest_distance = distance
-        nearest_prey = candidate
-      }
+
+        if (
+            organism.species === 'predator' &&
+            candidate.species === 'herbivore'
+          ) {
+            continue
+          }
+        if (
+            candidate.id === organism.id ||
+            candidate.energy <= 0 ||
+            candidate.species === organism.species
+        ) {
+            continue
+        }
+
+        if (
+            organism.species === 'omnivore' &&
+            candidate.species === 'predator'
+        ) {
+            continue
+        }
+    
+        if (
+            organism.species === 'decomposer_hunter' &&
+            candidate.species !== 'decomposer'
+        ) {
+            continue
+        }
+    
+        if (
+            candidate.species === 'decomposer' &&
+            organism.species !== 'decomposer_hunter'
+        ) {
+            continue
+        }
+    
+        if (
+            candidate.species === 'decomposer_hunter' &&
+            organism.species !== 'omnivore'
+        ) {
+            continue
+        }
+    
+        const distance = distanceBetween(
+            organism.x,
+            organism.y,
+            candidate.x,
+            candidate.y
+        )
+    
+        if (distance < closest_distance) {
+            closest_distance = distance
+            nearest_prey = candidate
+        }
     }
   
     return nearest_prey
-  }
+}
   
 
 function findNearestCorpse(
