@@ -21,11 +21,17 @@ const REPRODUCTION_ENERGY = 50
 const MAX_POPULATION = 50
 const REPRODUCTION_DISTANCE = 20
 
+const DECOMPOSER_MIN_ENERGY = 30
+const DECOMPOSER_REPRODUCTION_COST = 15
+const DECOMPOSER_OFFSPRING_ENERGY = 30
+const DECOMPOSER_REPRODUCTION_COOLDOWN = 5
+
 const REPRODUCTION_RULES: Record<SpeciesType, number> = {
   herbivore: 120,
   omnivore: 150,
   carnivore: 180,
-  predator: 190
+  predator: 190,
+  decomposer: 150
 }
 
 const INITIAL_SPECIES: SpeciesType[] = [
@@ -33,14 +39,28 @@ const INITIAL_SPECIES: SpeciesType[] = [
   'herbivore',
   'herbivore',
   'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
+  'herbivore',
   'carnivore',
   'carnivore',
-  'carnivore',
-  'omnivore',
   'omnivore',
   'omnivore',
   'predator',
-  'predator'
+  'decomposer',
+  'decomposer',
+  'decomposer',
+  'decomposer',
+  'decomposer',
+  'decomposer',
+  'decomposer'
 ]
 
 function randomPosition(max: number): number {
@@ -81,7 +101,8 @@ export function createInitialWorld(
       generation: 0,
       size: definition.initial_size,
       species,
-      genome: createGenome(definition.genome)
+      genome: createGenome(definition.genome),
+      reproduction_cooldown: 0
     }
 
     world.organisms.push(organism)
@@ -136,7 +157,11 @@ function findNearestPrey(
     if (
       candidate.id === organism.id ||
       candidate.energy <= 0 ||
-      candidate.species === organism.species
+      candidate.species === organism.species ||
+      (
+        organism.species === 'carnivore' &&
+        candidate.species === 'decomposer'
+      )
     ) {
       continue
     }
@@ -155,6 +180,78 @@ function findNearestPrey(
   }
 
   return nearest_prey
+}
+
+function findNearestCorpse(
+  organism: Organism,
+  organisms: Organism[]
+): Organism | null {
+  let nearest_corpse: Organism | null = null
+  let closest_distance = organism.genome.vision
+
+  for (const candidate of organisms) {
+    if (
+      candidate.id === organism.id ||
+      candidate.energy > 0
+    ) {
+      continue
+    }
+
+    const distance = distanceBetween(
+      organism.x,
+      organism.y,
+      candidate.x,
+      candidate.y
+    )
+
+    if (distance < closest_distance) {
+      closest_distance = distance
+      nearest_corpse = candidate
+    }
+  }
+
+  return nearest_corpse
+}
+
+function findNearestDecomposerPartner(
+  organism: Organism,
+  organisms: Organism[]
+): Organism | null {
+  if (
+    organism.species !== 'decomposer' ||
+    organism.energy < DECOMPOSER_MIN_ENERGY ||
+    (organism.reproduction_cooldown ?? 0) > 0
+  ) {
+    return null
+  }
+
+  let nearest_partner: Organism | null = null
+  let closest_distance = organism.genome.vision
+
+  for (const candidate of organisms) {
+    if (
+      candidate.id === organism.id ||
+      candidate.species !== 'decomposer' ||
+      candidate.energy < DECOMPOSER_MIN_ENERGY ||
+      (candidate.reproduction_cooldown ?? 0) > 0
+    ) {
+      continue
+    }
+
+    const distance = distanceBetween(
+      organism.x,
+      organism.y,
+      candidate.x,
+      candidate.y
+    )
+
+    if (distance < closest_distance) {
+      closest_distance = distance
+      nearest_partner = candidate
+    }
+  }
+
+  return nearest_partner
 }
 
 function updateOrganism(
@@ -180,8 +277,20 @@ function updateOrganism(
       ? findNearestPrey(organism, organisms)
       : null
 
+  const nearest_corpse =
+    definition.diet === 'dead'
+      ? findNearestCorpse(organism, organisms)
+      : null
+
+  const nearest_partner = findNearestDecomposerPartner(
+    organism,
+    organisms
+  )
+
   let target_food: Food | null = nearest_food
   let target_prey: Organism | null = null
+  let target_corpse: Organism | null = nearest_corpse
+  let target_partner: Organism | null = nearest_partner
 
   if (nearest_prey) {
     if (
@@ -204,7 +313,11 @@ function updateOrganism(
     }
   }
 
-  const target = target_prey ?? target_food
+  const target =
+    target_partner ??
+    target_prey ??
+    target_corpse ??
+    target_food
 
   let angle = organism.angle
 
@@ -283,6 +396,23 @@ function updateOrganism(
     }
   }
 
+  if (target_corpse) {
+    const distance_to_corpse = distanceBetween(
+      x,
+      y,
+      target_corpse.x,
+      target_corpse.y
+    )
+
+    if (distance_to_corpse <= EATING_DISTANCE + size + target_corpse.size) {
+      const energy_gain = 25 + target_corpse.size * 8
+
+      energy += energy_gain
+      size = Math.min(MAX_SIZE, size + energy_gain * 0.0015)
+      consumed_organism_id = target_corpse.id
+    }
+  }
+
   energy = Math.min(energy, MAX_ENERGY)
 
   return {
@@ -293,7 +423,11 @@ function updateOrganism(
       angle,
       energy: Math.max(0, energy),
       size,
-      age: organism.age + delta_time
+      age: organism.age + delta_time,
+      reproduction_cooldown: Math.max(
+        0,
+        (organism.reproduction_cooldown ?? 0) - delta_time
+      )
     },
     consumed_food_id,
     consumed_organism_id
@@ -322,7 +456,6 @@ export function advanceWorld(
 
     const available_organisms = world.organisms.filter(
       (candidate) =>
-        candidate.energy > 0 &&
         !consumed_organism_ids.has(candidate.id)
     )
 
@@ -375,6 +508,7 @@ export function advanceWorld(
     if (
       !parent ||
       parent.energy <= 0 ||
+      parent.species === 'decomposer' ||
       parent.energy < REPRODUCTION_RULES[parent.species]
     ) {
       continue
@@ -413,6 +547,138 @@ export function advanceWorld(
     }
 
     surviving_organisms.push(offspring)
+  }
+
+  const decomposers = surviving_organisms.filter(
+    (organism) =>
+      organism.species === 'decomposer' &&
+      organism.energy >= DECOMPOSER_MIN_ENERGY &&
+      (organism.reproduction_cooldown ?? 0) <= 0
+  )
+
+  const reproduced_decomposers = new Set<number>()
+
+  for (const first of decomposers) {
+    const living_population = surviving_organisms.filter(
+      (organism) => organism.energy > 0
+    ).length
+
+    if (living_population >= MAX_POPULATION) {
+      break
+    }
+
+    if (reproduced_decomposers.has(first.id)) {
+      continue
+    }
+
+    const second = decomposers.find((candidate) => {
+      if (
+        candidate.id === first.id ||
+        reproduced_decomposers.has(candidate.id)
+      ) {
+        return false
+      }
+
+      const current_first = surviving_organisms.find(
+        (organism) => organism.id === first.id
+      )
+
+      const current_second = surviving_organisms.find(
+        (organism) => organism.id === candidate.id
+      )
+
+      if (
+        !current_first ||
+        !current_second ||
+        current_first.energy < DECOMPOSER_MIN_ENERGY ||
+        current_second.energy < DECOMPOSER_MIN_ENERGY ||
+        (current_first.reproduction_cooldown ?? 0) > 0 ||
+        (current_second.reproduction_cooldown ?? 0) > 0
+      ) {
+        return false
+      }
+
+      return distanceBetween(
+        current_first.x,
+        current_first.y,
+        current_second.x,
+        current_second.y
+      ) <= current_first.size + current_second.size
+    })
+
+    if (!second) {
+      continue
+    }
+
+    const first_index = surviving_organisms.findIndex(
+      (organism) => organism.id === first.id
+    )
+
+    const second_index = surviving_organisms.findIndex(
+      (organism) => organism.id === second.id
+    )
+
+    if (first_index === -1 || second_index === -1) {
+      continue
+    }
+
+    const current_first = surviving_organisms[first_index]
+    const current_second = surviving_organisms[second_index]
+
+    if (!current_first || !current_second) {
+    continue
+    }
+
+    surviving_organisms[first_index] = {
+      ...current_first,
+      energy: current_first.energy - DECOMPOSER_REPRODUCTION_COST,
+      reproduction_cooldown: DECOMPOSER_REPRODUCTION_COOLDOWN
+    }
+
+    surviving_organisms[second_index] = {
+      ...current_second,
+      energy: current_second.energy - DECOMPOSER_REPRODUCTION_COST,
+      reproduction_cooldown: DECOMPOSER_REPRODUCTION_COOLDOWN
+    }
+
+    const offspring_angle = Math.random() * Math.PI * 2
+    const offspring_distance = current_first.size + current_second.size + 4
+
+    const offspring: Organism = {
+      id: next_entity_id++,
+      x: Math.max(
+        0,
+        Math.min(
+          world.width,
+          (current_first.x + current_second.x) / 2 +
+            Math.cos(offspring_angle) * offspring_distance
+        )
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          world.height,
+          (current_first.y + current_second.y) / 2 +
+            Math.sin(offspring_angle) * offspring_distance
+        )
+      ),
+      angle: Math.random() * Math.PI * 2,
+      energy: DECOMPOSER_OFFSPRING_ENERGY,
+      age: 0,
+      generation: Math.max(
+        current_first.generation,
+        current_second.generation
+      ) + 1,
+      size: (current_first.size + current_second.size) / 2,
+      species: 'decomposer',
+      genome: mutateGenome(current_first.genome),
+      reproduction_cooldown: DECOMPOSER_REPRODUCTION_COOLDOWN
+    }
+
+    surviving_organisms.push(offspring)
+
+    reproduced_decomposers.add(first.id)
+    reproduced_decomposers.add(second.id)
   }
 
   let food_spawn_timer = world.food_spawn_timer

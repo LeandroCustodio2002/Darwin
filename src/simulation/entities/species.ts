@@ -1,3 +1,4 @@
+
 import type { Genome } from '../genetics/genome'
 
 export type SpeciesType =
@@ -5,11 +6,12 @@ export type SpeciesType =
   | 'carnivore'
   | 'omnivore'
   | 'predator'
+  | 'decomposer'
 
 export interface SpeciesDefinition {
   name: string
   color: string
-  diet: 'food' | 'organisms' | 'both'
+  diet: 'food' | 'organisms' | 'both' | 'dead'
   aggression: number
   genome: Genome
   initial_size: number
@@ -66,5 +68,18 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
       metabolism: 1.5
     },
     initial_size: 7
+  },
+
+  decomposer: {
+    name: 'Decompositor',
+    color: '#14b8a6',
+    diet: 'dead',
+    aggression: 0,
+    genome: {
+      speed: 40,
+      vision: 160,
+      metabolism: 0.7
+    },
+    initial_size: 5.5
   }
 }
