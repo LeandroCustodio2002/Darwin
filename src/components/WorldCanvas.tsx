@@ -1,5 +1,6 @@
 
 import { useEffect, useRef } from 'react'
+import { SPECIES } from '../simulation/entities/species'
 import type { World } from '../simulation/world/world'
 
 interface WorldCanvasProps {
@@ -63,26 +64,35 @@ function WorldCanvas({ world }: WorldCanvasProps) {
       for (const organism of world.organisms) {
         const x = organism.x * scale_x
         const y = organism.y * scale_y
+        const is_dead = organism.energy <= 0
+        const color = is_dead
+          ? '#6b7280'
+          : SPECIES[organism.species].color
+        const radius = organism.size
 
         context.beginPath()
-        context.arc(x, y, 9, 0, Math.PI * 2)
-        context.fillStyle = 'rgba(56, 189, 248, 0.12)'
+        context.arc(x, y, radius * 1.8, 0, Math.PI * 2)
+        context.fillStyle = is_dead
+          ? 'rgba(107, 114, 128, 0.12)'
+          : `${color}20`
         context.fill()
 
         context.beginPath()
-        context.arc(x, y, 5, 0, Math.PI * 2)
-        context.fillStyle = '#38bdf8'
+        context.arc(x, y, radius, 0, Math.PI * 2)
+        context.fillStyle = color
         context.fill()
 
-        context.beginPath()
-        context.moveTo(x, y)
-        context.lineTo(
-          x + Math.cos(organism.angle) * 12,
-          y + Math.sin(organism.angle) * 12
-        )
-        context.strokeStyle = '#bae6fd'
-        context.lineWidth = 1.5
-        context.stroke()
+        if (!is_dead) {
+          context.beginPath()
+          context.moveTo(x, y)
+          context.lineTo(
+            x + Math.cos(organism.angle) * (radius + 5),
+            y + Math.sin(organism.angle) * (radius + 5)
+          )
+          context.strokeStyle = '#ffffff'
+          context.lineWidth = 1.5
+          context.stroke()
+        }
       }
     }
 
