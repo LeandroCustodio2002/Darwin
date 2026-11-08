@@ -86,8 +86,8 @@ export const SPECIES: Record<SpeciesType, SpeciesDefinition> = {
 
   decomposer_hunter: {
     name: 'Caçador de decompositores',
-    color: '#facc15',
-    diet: 'decomposers',
+    color: '#3b82f6',
+    diet: 'both',
     aggression: 0.85,
     genome: {
       speed: 65,

@@ -30,78 +30,48 @@ const MEALS_PER_WASTE = 5
 const WASTE_ENERGY = 20
 
 const REPRODUCTION_RULES: Record<SpeciesType, number> = {
-  herbivore: 120,
-  omnivore: 150,
-  carnivore: 180,
-  predator: 190,
-  decomposer: 150,
-  decomposer_hunter: 175
+  herbivore: 100,
+  omnivore: 170,
+  carnivore: 200,
+  predator: 200,
+  decomposer: 30,
+  decomposer_hunter: 130
 }
 
 const INITIAL_SPECIES: SpeciesType[] = [
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'herbivore',
-  'carnivore',
-  'carnivore',
-  'omnivore',
-  'omnivore',
-  'predator',
-  'predator',
-  'decomposer',
-  'decomposer',
-  'decomposer',
-  'decomposer',
-  'decomposer',
-  'decomposer',
-  'decomposer',
-  'decomposer_hunter',
-  'decomposer_hunter',
-  'decomposer_hunter'
+    'herbivore',
+    'herbivore',
+    'herbivore',
+    'herbivore',
+    'herbivore',
+    'herbivore',
+    'herbivore',
+    
+    'carnivore',
+    'carnivore',
+    
+    'omnivore',
+    'omnivore',
+    'omnivore',
+    
+    'predator',
+    
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    'decomposer',
+    
+    'decomposer_hunter',
+    'decomposer_hunter',
+    'decomposer_hunter'
 ]
 
 function randomPosition(max: number): number {
@@ -225,52 +195,59 @@ function findNearestWaste(
   return nearest_waste
 }
 
+
 function findNearestPrey(
-  organism: Organism,
-  organisms: Organism[]
-): Organism | null {
-  let nearest_prey: Organism | null = null
-  let closest_distance = organism.genome.vision
-
-  for (const candidate of organisms) {
-    if (
-      candidate.id === organism.id ||
-      candidate.energy <= 0 ||
-      candidate.species === organism.species
-    ) {
-      continue
+    organism: Organism,
+    organisms: Organism[]
+  ): Organism | null {
+    if (organism.species === 'herbivore') {
+      return null
     }
-
-    if (
-      organism.species === 'decomposer_hunter' &&
-      candidate.species !== 'decomposer'
-    ) {
-      continue
+  
+    let nearest_prey: Organism | null = null
+    let closest_distance = organism.genome.vision
+  
+    for (const candidate of organisms) {
+      if (
+        candidate.id === organism.id ||
+        candidate.energy <= 0 ||
+        candidate.species === organism.species
+      ) {
+        continue
+      }
+  
+      if (
+        organism.species === 'decomposer_hunter' &&
+        candidate.species !== 'decomposer'
+      ) {
+        continue
+      }
+  
+      if (
+        (organism.species === 'carnivore' ||
+          organism.species === 'predator' ||
+          organism.species === 'omnivore') &&
+        candidate.species === 'decomposer'
+      ) {
+        continue
+      }
+  
+      const distance = distanceBetween(
+        organism.x,
+        organism.y,
+        candidate.x,
+        candidate.y
+      )
+  
+      if (distance < closest_distance) {
+        closest_distance = distance
+        nearest_prey = candidate
+      }
     }
-
-    if (
-      (organism.species === 'carnivore' ||
-        organism.species === 'predator') &&
-      candidate.species === 'decomposer'
-    ) {
-      continue
-    }
-
-    const distance = distanceBetween(
-      organism.x,
-      organism.y,
-      candidate.x,
-      candidate.y
-    )
-
-    if (distance < closest_distance) {
-      closest_distance = distance
-      nearest_prey = candidate
-    }
+  
+    return nearest_prey
   }
-
-  return nearest_prey
-}
+  
 
 function findNearestCorpse(
   organism: Organism,
