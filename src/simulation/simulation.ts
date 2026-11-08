@@ -26,6 +26,9 @@ const DECOMPOSER_REPRODUCTION_COST = 15
 const DECOMPOSER_OFFSPRING_ENERGY = 30
 const DECOMPOSER_REPRODUCTION_COOLDOWN = 5
 
+const MEALS_PER_WASTE = 5
+const WASTE_ENERGY = 20
+
 const REPRODUCTION_RULES: Record<SpeciesType, number> = {
   herbivore: 120,
   omnivore: 150,
@@ -102,7 +105,8 @@ export function createInitialWorld(
       size: definition.initial_size,
       species,
       genome: createGenome(definition.genome),
-      reproduction_cooldown: 0
+      reproduction_cooldown: 0,
+      meals_since_waste: 0
     }
 
     world.organisms.push(organism)
@@ -113,7 +117,8 @@ export function createInitialWorld(
       id: world.next_entity_id++,
       x: randomPosition(width),
       y: randomPosition(height),
-      energy: 25
+      energy: 25,
+      kind: 'food'
     }
 
     world.food.push(food)
@@ -130,6 +135,10 @@ function findNearestFood(
   let closest_distance = organism.genome.vision
 
   for (const item of food) {
+    if (item.kind === 'waste') {
+      continue
+    }
+
     const distance = distanceBetween(
       organism.x,
       organism.y,
@@ -144,6 +153,38 @@ function findNearestFood(
   }
 
   return nearest_food
+}
+
+function findNearestWaste(
+  organism: Organism,
+  food: Food[]
+): Food | null {
+  if (organism.species !== 'decomposer') {
+    return null
+  }
+
+  let nearest_waste: Food | null = null
+  let closest_distance = organism.genome.vision
+
+  for (const item of food) {
+    if (item.kind !== 'waste') {
+      continue
+    }
+
+    const distance = distanceBetween(
+      organism.x,
+      organism.y,
+      item.x,
+      item.y
+    )
+
+    if (distance < closest_distance) {
+      closest_distance = distance
+      nearest_waste = item
+    }
+  }
+
+  return nearest_waste
 }
 
 function findNearestPrey(
@@ -264,6 +305,7 @@ function updateOrganism(
   organism: Organism
   consumed_food_id: number | null
   consumed_organism_id: number | null
+  waste_count: number
 } {
   const definition = SPECIES[organism.species]
 
@@ -271,6 +313,8 @@ function updateOrganism(
     definition.diet === 'food' || definition.diet === 'both'
       ? findNearestFood(organism, food)
       : null
+
+  const nearest_waste = findNearestWaste(organism, food)
 
   const nearest_prey =
     definition.diet === 'organisms' || definition.diet === 'both'
@@ -288,6 +332,7 @@ function updateOrganism(
   )
 
   let target_food: Food | null = nearest_food
+  let target_waste: Food | null = nearest_waste
   let target_prey: Organism | null = null
   let target_corpse: Organism | null = nearest_corpse
   let target_partner: Organism | null = nearest_partner
@@ -317,6 +362,7 @@ function updateOrganism(
     target_partner ??
     target_prey ??
     target_corpse ??
+    target_waste ??
     target_food
 
   let angle = organism.angle
@@ -379,6 +425,21 @@ function updateOrganism(
     }
   }
 
+  if (target_waste) {
+    const distance_to_waste = distanceBetween(
+      x,
+      y,
+      target_waste.x,
+      target_waste.y
+    )
+
+    if (distance_to_waste <= EATING_DISTANCE + size) {
+      energy += target_waste.energy
+      size = Math.min(MAX_SIZE, size + target_waste.energy * 0.002)
+      consumed_food_id = target_waste.id
+    }
+  }
+
   if (target_prey) {
     const distance_to_prey = distanceBetween(
       x,
@@ -415,6 +476,16 @@ function updateOrganism(
 
   energy = Math.min(energy, MAX_ENERGY)
 
+  const meals_eaten =
+    Number(consumed_food_id !== null) +
+    Number(consumed_organism_id !== null)
+
+  const total_meals =
+    (organism.meals_since_waste ?? 0) + meals_eaten
+
+  const waste_count = Math.floor(total_meals / MEALS_PER_WASTE)
+  const meals_since_waste = total_meals % MEALS_PER_WASTE
+
   return {
     organism: {
       ...organism,
@@ -427,10 +498,12 @@ function updateOrganism(
       reproduction_cooldown: Math.max(
         0,
         (organism.reproduction_cooldown ?? 0) - delta_time
-      )
+      ),
+      meals_since_waste
     },
     consumed_food_id,
-    consumed_organism_id
+    consumed_organism_id,
+    waste_count
   }
 }
 
@@ -489,6 +562,16 @@ export function advanceWorld(
       }
     }
 
+    for (let i = 0; i < result.waste_count; i++) {
+      remaining_food.push({
+        id: next_entity_id++,
+        x: result.organism.x + (Math.random() * 8 - 4),
+        y: result.organism.y + (Math.random() * 8 - 4),
+        energy: WASTE_ENERGY,
+        kind: 'waste'
+      })
+    }
+
     surviving_organisms.push(result.organism)
   }
 
@@ -538,7 +621,9 @@ export function advanceWorld(
       generation: parent.generation + 1,
       size: parent.size,
       species: parent.species,
-      genome: mutateGenome(parent.genome)
+      genome: mutateGenome(parent.genome),
+      reproduction_cooldown: 0,
+      meals_since_waste: 0
     }
 
     surviving_organisms[i] = {
@@ -626,7 +711,7 @@ export function advanceWorld(
     const current_second = surviving_organisms[second_index]
 
     if (!current_first || !current_second) {
-    continue
+      continue
     }
 
     surviving_organisms[first_index] = {
@@ -672,7 +757,8 @@ export function advanceWorld(
       size: (current_first.size + current_second.size) / 2,
       species: 'decomposer',
       genome: mutateGenome(current_first.genome),
-      reproduction_cooldown: DECOMPOSER_REPRODUCTION_COOLDOWN
+      reproduction_cooldown: DECOMPOSER_REPRODUCTION_COOLDOWN,
+      meals_since_waste: 0
     }
 
     surviving_organisms.push(offspring)
@@ -683,13 +769,17 @@ export function advanceWorld(
 
   let food_spawn_timer = world.food_spawn_timer
 
-  if (remaining_food.length < MAX_FOOD) {
+  const normal_food_count = remaining_food.filter(
+    (item) => item.kind !== 'waste'
+  ).length
+
+  if (normal_food_count < MAX_FOOD) {
     food_spawn_timer += delta_time
 
     if (food_spawn_timer >= FOOD_SPAWN_INTERVAL) {
       const amount = Math.min(
         FOOD_SPAWN_AMOUNT,
-        MAX_FOOD - remaining_food.length
+        MAX_FOOD - normal_food_count
       )
 
       for (let i = 0; i < amount; i++) {
@@ -697,7 +787,8 @@ export function advanceWorld(
           id: next_entity_id++,
           x: randomPosition(world.width),
           y: randomPosition(world.height),
-          energy: 25
+          energy: 25,
+          kind: 'food'
         })
       }
 

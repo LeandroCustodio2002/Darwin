@@ -55,10 +55,18 @@ function WorldCanvas({ world }: WorldCanvasProps) {
         const x = food.x * scale_x
         const y = food.y * scale_y
 
-        context.beginPath()
-        context.arc(x, y, 3, 0, Math.PI * 2)
-        context.fillStyle = '#8bd450'
-        context.fill()
+        if (food.kind === 'waste') {
+          context.fillStyle = '#8b5a2b'
+          context.fillRect(x - 3, y - 3, 6, 6)
+
+          context.fillStyle = '#b77942'
+          context.fillRect(x - 2, y - 2, 2, 2)
+        } else {
+          context.beginPath()
+          context.arc(x, y, 3, 0, Math.PI * 2)
+          context.fillStyle = '#8bd450'
+          context.fill()
+        }
       }
 
       for (const organism of world.organisms) {
