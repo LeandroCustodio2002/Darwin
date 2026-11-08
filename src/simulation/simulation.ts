@@ -5,8 +5,50 @@ import type { Food } from './entities/food'
 import { createWorld } from './world/world'
 import type { World } from './world/world'
 
+const EATING_DISTANCE = 12
+const TURN_SPEED = 10
+
 function randomPosition(max: number): number {
   return Math.random() * max
+}
+
+function distanceBetween(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number
+): number {
+  return Math.hypot(x2 - x1, y2 - y1)
+}
+
+function normalizeAngle(angle: number): number {
+  while (angle > Math.PI) angle -= Math.PI * 2
+  while (angle < -Math.PI) angle += Math.PI * 2
+  return angle
+}
+
+function findNearestFood(
+  organism: Organism,
+  food: Food[]
+): Food | null {
+  let nearest_food: Food | null = null
+  let closest_distance = organism.genome.vision
+
+  for (const item of food) {
+    const distance = distanceBetween(
+      organism.x,
+      organism.y,
+      item.x,
+      item.y
+    )
+
+    if (distance < closest_distance) {
+      closest_distance = distance
+      nearest_food = item
+    }
+  }
+
+  return nearest_food
 }
 
 export function createInitialWorld(
@@ -44,44 +86,118 @@ export function createInitialWorld(
   return world
 }
 
+function updateOrganism(
+  organism: Organism,
+  food: Food[],
+  delta_time: number,
+  world: World
+): { organism: Organism; consumed_food_id: number | null } {
+  let angle = organism.angle
+
+  const target_food = findNearestFood(organism, food)
+
+  if (target_food) {
+    const target_angle = Math.atan2(
+      target_food.y - organism.y,
+      target_food.x - organism.x
+    )
+
+    const angle_difference = normalizeAngle(target_angle - angle)
+
+    const rotation = Math.max(
+      -TURN_SPEED * delta_time,
+      Math.min(TURN_SPEED * delta_time, angle_difference)
+    )
+
+    angle += rotation
+  } else {
+    angle += (Math.random() * 2 - 1) * 1.8 * delta_time
+  }
+
+  let x =
+    organism.x +
+    Math.cos(angle) * organism.genome.speed * delta_time
+
+  let y =
+    organism.y +
+    Math.sin(angle) * organism.genome.speed * delta_time
+
+  if (x < 0 || x > world.width) {
+    angle = Math.PI - angle
+    x = Math.max(0, Math.min(world.width, x))
+  }
+
+  if (y < 0 || y > world.height) {
+    angle = -angle
+    y = Math.max(0, Math.min(world.height, y))
+  }
+
+  let energy =
+    organism.energy - organism.genome.metabolism * delta_time
+
+  let consumed_food_id: number | null = null
+
+  if (target_food) {
+    const distance_to_food = distanceBetween(
+      x,
+      y,
+      target_food.x,
+      target_food.y
+    )
+
+    if (distance_to_food <= EATING_DISTANCE) {
+      energy += target_food.energy
+      consumed_food_id = target_food.id
+    }
+  }
+
+  return {
+    organism: {
+      ...organism,
+      x,
+      y,
+      angle,
+      energy,
+      age: organism.age + delta_time
+    },
+    consumed_food_id
+  }
+}
+
 export function advanceWorld(
   world: World,
   delta_time: number
 ): World {
-  const organisms = world.organisms.map((organism) => {
-    let angle = organism.angle
+  const remaining_food = [...world.food]
+  const surviving_organisms: Organism[] = []
 
-    angle += (Math.random() * 2 - 1) * 1.8 * delta_time
+  for (const organism of world.organisms) {
+    const result = updateOrganism(
+      organism,
+      remaining_food,
+      delta_time,
+      world
+    )
 
-    let x =
-      organism.x +
-      Math.cos(angle) * organism.genome.speed * delta_time
+    if (result.consumed_food_id !== null) {
+      const food_index = remaining_food.findIndex(
+        (item) => item.id === result.consumed_food_id
+      )
 
-    let y =
-      organism.y +
-      Math.sin(angle) * organism.genome.speed * delta_time
-
-    if (x < 0 || x > world.width) {
-      angle = Math.PI - angle
-      x = Math.max(0, Math.min(world.width, x))
+      if (food_index !== -1) {
+        remaining_food.splice(food_index, 1)
+      }
     }
 
-    if (y < 0 || y > world.height) {
-      angle = -angle
-      y = Math.max(0, Math.min(world.height, y))
+    if (result.organism.energy > 0) {
+      surviving_organisms.push(result.organism)
     }
-
-    return {
-      ...organism,
-      x,
-      y,
-      angle
-    }
-  })
+  }
 
   return {
     ...world,
-    organisms,
+    organisms: surviving_organisms,
+    food: remaining_food,
     tick: world.tick + 1
   }
 }
