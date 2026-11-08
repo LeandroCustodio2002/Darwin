@@ -1,0 +1,273 @@
+
+.app {
+  width: min(1600px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.topbar {
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1e2935;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #38bdf8;
+  border-radius: 9px;
+  color: #38bdf8;
+  font-weight: 800;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -1px;
+}
+
+.simulation-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.status-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8bd450;
+  box-shadow: 0 0 10px #8bd45080;
+}
+
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  padding: 36px 0;
+}
+
+.simulation-section {
+  min-width: 0;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.eyebrow {
+  display: block;
+  color: #64748b;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+.section-heading h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.8px;
+}
+
+.world-dimensions {
+  color: #64748b;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+}
+
+.world-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid #263442;
+  border-radius: 12px;
+  background: #0b1017;
+}
+
+.world-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.world-overlay {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  color: #64748b;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.world-overlay span:last-child {
+  color: #8bd450;
+}
+
+.world-legend {
+  display: flex;
+  gap: 22px;
+  padding: 16px 2px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.world-legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.world-legend i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.legend-organism {
+  background: #38bdf8;
+}
+
+.legend-food {
+  background: #8bd450;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  padding: 18px;
+  border: 1px solid #1e2935;
+  border-radius: 10px;
+  background: #0d131b;
+}
+
+.main-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.main-stat span,
+.stat-value span:last-child {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.stat-value {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  font-size: 23px;
+  font-weight: 600;
+}
+
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.food-dot {
+  background: #8bd450;
+}
+
+.info-panel p {
+  margin: 12px 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-top: 1px solid #1e2935;
+  color: #475569;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+}
+
+@media (max-width: 850px) {
+  .app {
+    padding: 0 20px;
+  }
+
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .info-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .app {
+    padding: 0 14px;
+  }
+
+  .topbar {
+    height: 68px;
+  }
+
+  .simulation-status {
+    font-size: 10px;
+  }
+
+  .dashboard {
+    padding: 24px 0;
+  }
+
+  .world-container {
+    aspect-ratio: 1 / 1;
+  }
+
+  .sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .info-panel {
+    grid-column: auto;
+  }
+}
