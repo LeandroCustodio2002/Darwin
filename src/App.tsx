@@ -1,11 +1,47 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
-import { createInitialWorld } from './simulation/simulation'
+import { advanceWorld, createInitialWorld } from './simulation/simulation'
 import WorldCanvas from './components/WorldCanvas'
 
 function App() {
-  const [world] = useState(() => createInitialWorld())
+  const [world, setWorld] = useState(() => createInitialWorld())
+
+  useEffect(() => {
+    let animation_frame = 0
+    let previous_time = 0
+    let accumulator = 0
+
+    const fixed_delta = 1 / 30
+
+    const update = (current_time: number) => {
+      if (previous_time === 0) {
+        previous_time = current_time
+      }
+
+      const elapsed = Math.min(
+        (current_time - previous_time) / 1000,
+        0.05
+      )
+
+      previous_time = current_time
+      accumulator += elapsed
+
+      while (accumulator >= fixed_delta) {
+        setWorld((current_world) =>
+          advanceWorld(current_world, fixed_delta)
+        )
+
+        accumulator -= fixed_delta
+      }
+
+      animation_frame = requestAnimationFrame(update)
+    }
+
+    animation_frame = requestAnimationFrame(update)
+
+    return () => cancelAnimationFrame(animation_frame)
+  }, [])
 
   const generation = Math.max(
     0,
@@ -22,7 +58,7 @@ function App() {
 
         <div className="simulation-status">
           <span className="status-indicator" />
-          Ecossistema inicializado
+          Simulação em execução
         </div>
       </header>
 
@@ -44,7 +80,7 @@ function App() {
 
             <div className="world-overlay">
               <span>LIVE VIEW</span>
-              <span>● INITIAL STATE</span>
+              <span>● SIMULATION RUNNING</span>
             </div>
           </div>
 
