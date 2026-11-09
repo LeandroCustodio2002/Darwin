@@ -5,6 +5,12 @@
 
 **An artificial ecosystem where organisms compete, survive, reproduce and evolve through generations.**
 
+<p align="center">
+  <a href="https://leandrocustodio2002.github.io/Darwin/">
+    **🚀 Try Darwin Online**
+  </a>
+</p>
+
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
@@ -13,12 +19,6 @@
 <img width="100%" alt="Darwin — Evolutionary Ecosystem Simulation" src="https://github.com/user-attachments/assets/7ed6e1c9-71b5-4a05-8af8-0c2dbd8a2c7a" />
 
 ### 🔗 [Explore the repository](https://github.com/LeandroCustodio2002/Darwin)
-
-<p align="center">
-  <a href="https://leandrocustodio2002.github.io/Darwin/">
-    **🚀 Try Darwin Online**
-  </a>
-</p>
 
 </div>
 
