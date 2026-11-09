@@ -1,6 +1,7 @@
+<div align="center">
+
 # 🧬 Darwin — Evolutionary Ecosystem Simulator
 
-<div align="center">
 
 **An artificial ecosystem where organisms compete, survive, reproduce and evolve through generations.**
 
