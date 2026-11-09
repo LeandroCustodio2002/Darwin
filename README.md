@@ -2,12 +2,11 @@
 
 # 🧬 Darwin — Evolutionary Ecosystem Simulator
 
-
 **An artificial ecosystem where organisms compete, survive, reproduce and evolve through generations.**
 
 <p align="center">
   <a href="https://leandrocustodio2002.github.io/Darwin/">
-    **🚀 Try Darwin Online**
+    <strong>🚀 Try Darwin Online</strong>
   </a>
 </p>
 
@@ -15,6 +14,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=white)
 ![HTML Canvas](https://img.shields.io/badge/HTML_Canvas-E34F26?logo=html5&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 
 <img width="100%" alt="Darwin — Evolutionary Ecosystem Simulation" src="https://github.com/user-attachments/assets/7ed6e1c9-71b5-4a05-8af8-0c2dbd8a2c7a" />
 
@@ -192,6 +192,12 @@ Some of the main goals are:
 - Balance predator-prey relationships.
 - Observe population dynamics across generations.
 - Create an environment where complex behavior emerges from relatively simple rules.
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+Copyright © 2026 Leandro de Oliveira Custódio.
 
 ---
 
